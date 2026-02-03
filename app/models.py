@@ -2,6 +2,7 @@ from .extensions import db
 from flask_login import UserMixin
 from decimal import Decimal
 from sqlalchemy import UniqueConstraint
+from datetime import datetime
 
 class User(db.Model, UserMixin):
     __tablename__ = "users"
@@ -9,7 +10,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)  # MVP: düz metin (bilerek)
-    role = db.Column(db.String(50), nullable=False, default="muhasebe")  # admin / muhasebe
+    role = db.Column(db.String(50), nullable=False, default="on_muhasebe")  # admin / muhasebe
     is_active = db.Column(db.Boolean, default=True, nullable=False)
 
     def get_id(self):
@@ -55,6 +56,18 @@ class ZRaporu(db.Model):
     iade_tutar = db.Column(db.Numeric(14, 2), default=Decimal("0.00"), nullable=False)
 
     created_by = db.Column(db.String(255), nullable=True)
+
+    # --- YENİ: iş akışı / kilit ---
+    status = db.Column(db.String(20), nullable=False, default="draft")  # draft / submitted / locked
+
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    submitted_by = db.Column(db.String(255), nullable=True)
+
+    locked_at = db.Column(db.DateTime, nullable=True)
+    locked_by = db.Column(db.String(255), nullable=True)
+
+    updated_at = db.Column(db.DateTime, nullable=True)
+    updated_by = db.Column(db.String(255), nullable=True)
 
 class ZKdvSatiri(db.Model):
     __tablename__ = "z_kdv_satirlari"

@@ -105,10 +105,19 @@ def z_giris_post():
 
     # Aynı gün + aynı kasa varsa güncelle
     z = ZRaporu.query.filter_by(tarih=tarih, kasa_id=kasa_id).first()
+    if z and z.status == "locked":
+        flash("Bu Z raporu kilitli. Düzenlenemez.", "danger")
+        return redirect(url_for("zrapor.rapor_detay", z_id=z.id))
     if not z:
-        z = ZRaporu(tarih=tarih, kasa_id=kasa_id, created_by=current_user.email)
+        z = ZRaporu(
+            tarih=tarih,
+            kasa_id=kasa_id,
+            created_by=current_user.email,
+            status="draft"
+        )
         db.session.add(z)
         db.session.flush()
+
 
     z.fis_ciro = fis
     z.fatura_ciro = fatura
@@ -129,6 +138,9 @@ def z_giris_post():
         brut = parse_try(request.form.get(f"pos_{p.id}"))
         if brut > 0:
             db.session.add(ZPosSatiri(z_raporu_id=z.id, pos_cihaz_id=p.id, brut_tutar=brut))
+    
+    z.updated_at = datetime.utcnow()
+    z.updated_by = current_user.email
 
     db.session.commit()
     flash("Z raporu kaydedildi.", "success")

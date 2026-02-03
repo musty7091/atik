@@ -1,0 +1,40 @@
+body { font-family: Arial, sans-serif; margin: 0; background:#f6f7fb; color:#111; }
+.container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+
+.topbar { display:flex; justify-content:space-between; align-items:center; padding: 14px 18px; background:#111827; color:#fff; }
+.brand .title { font-weight: 700; }
+.brand .subtitle { font-size: 12px; opacity: .85; margin-top:2px; }
+
+.nav a { color:#fff; text-decoration:none; margin-left: 14px; font-size: 14px; opacity:.9; }
+.nav a:hover { opacity: 1; text-decoration: underline; }
+
+.card { background:#fff; border-radius: 12px; padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,.06); }
+.muted { color:#6b7280; }
+
+.login-body { display:flex; align-items:center; justify-content:center; height:100vh; }
+.login-card { width: 420px; background:#fff; border-radius: 14px; padding: 22px; box-shadow: 0 10px 25px rgba(0,0,0,.08); }
+.login-card h1 { margin: 0 0 6px 0; font-size: 20px; }
+.login-card label { display:block; margin-top: 12px; font-size: 13px; color:#374151; }
+.login-card input { width: 100%; padding: 10px 12px; margin-top: 6px; border:1px solid #d1d5db; border-radius: 10px; }
+.login-card button { width:100%; margin-top: 14px; padding: 10px 12px; border:0; border-radius: 10px; background:#111827; color:#fff; font-weight:700; cursor:pointer; }
+.login-card button:hover { opacity:.92; }
+.hint { margin-top: 12px; font-size: 12px; color:#6b7280; }
+
+.flash-wrap { margin: 10px 0 16px 0; }
+.flash { padding: 10px 12px; border-radius: 10px; font-size: 13px; }
+.flash-danger { background:#fee2e2; color:#991b1b; }
+.flash-success { background:#dcfce7; color:#166534; }
+
+.tbl { width:100%; border-collapse: collapse; margin-top: 10px; }
+.tbl th, .tbl td { border-bottom:1px solid #e5e7eb; padding: 10px; text-align:left; font-size: 14px; }
+.tbl th { color:#374151; font-size: 13px; }
+button.danger { background:#991b1b; }
+
+.grid2, .grid3 { display:grid; gap: 12px; margin-top: 14px; }
+.grid2 { grid-template-columns: repeat(2, 1fr); }
+.grid3 { grid-template-columns: repeat(3, 1fr); }
+.grid2 label, .grid3 label { display:block; margin: 6px 0; font-size: 13px; color:#374151; }
+.grid2 input, .grid3 input { width:100%; padding: 10px 12px; border:1px solid #d1d5db; border-radius: 10px; }
+hr { border:0; border-top:1px solid #e5e7eb; margin: 16px 0; }
+select { width:100%; padding: 10px 12px; border:1px solid #d1d5db; border-radius: 10px; background:#fff; }
+h3 { margin: 10px 0; }

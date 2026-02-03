@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Günlük Z Girişi</h2>
+  <p class="muted">Fiş/Fatura/İade + KKTC KDV (KDV dahil girilir) + POS dağılımı.</p>
+
+  <div class="zwrap">
+    <!-- SOL: FORM -->
+    <div class="zleft">
+      <form method="post" action="{{ url_for('zrapor.z_giris_post') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="grid3">
+          <div>
+            <label>Tarih</label>
+            <input id="tarihInput" type="date" name="tarih" required value="{{ default_tarih }}">
+          </div>
+          <div>
+            <label>Kasa</label>
+            <select name="kasa_id" required>
+              <option value="">Seçiniz</option>
+              {% for k in kasalar %}
+                <option value="{{ k.id }}">Kasa {{ k.kasa_no }}{% if k.fm_no %} ({{ k.fm_no }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div></div>
+        </div>
+
+        <hr/>
+
+        <h3>Ciro Bilgileri</h3>
+        <div class="grid3">
+          <div>
+            <label>Fiş Cirosu (TL)</label>
+            <input name="fis_ciro" placeholder="0,00" inputmode="decimal">
+          </div>
+          <div>
+            <label>Fatura Cirosu (TL)</label>
+            <input name="fatura_ciro" placeholder="0,00" inputmode="decimal">
+          </div>
+          <div>
+            <label>İade Tutarı (TL)</label>
+            <input name="iade_tutar" placeholder="0,00" inputmode="decimal">
+          </div>
+        </div>
+
+        <hr/>
+
+        <h3>KKTC KDV (KDV Dahil Tutar Girilir)</h3>
+        <div class="grid3">
+          {% for kod in kdv_kodlari %}
+          <div>
+            <label>
+              {% if kod == "OZEL" %}
+                Özel Matrah (KDV dahil)
+              {% else %}
+                %{{ kod.replace("KDV","") }} KDV Dahil Tutar
+              {% endif %}
+            </label>
+            <input name="kdv_{{ kod }}" placeholder="0,00" inputmode="decimal">
+          </div>
+          {% endfor %}
+        </div>
+
+        <hr/>
+
+        <h3>POS Dağılımı</h3>
+        <div class="grid3">
+          {% for p in poslar %}
+          <div>
+            <label>{{ p.ad }}{% if p.banka_adi %} ({{ p.banka_adi }}){% endif %}</label>
+            <input name="pos_{{ p.id }}" placeholder="0,00" inputmode="decimal">
+            <div class="muted small">Komisyon: {{ (p.komisyon_orani * 100) | round(2) }}%</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- HIZLI KONTROL TOPLAMLARI -->
+        <div class="sumcard">
+          <div class="grid3">
+            <div>
+              <b>KDV Dahil Toplam</b>
+              <div id="kdvToplam">0.00</div>
+            </div>
+            <div>
+              <b>POS Brüt Toplam</b>
+              <div id="posToplam">0.00</div>
+            </div>
+            <div>
+              <b>Nihai Ciro (Fiş+Fatura-İade)</b>
+              <div id="nihaiToplam">0.00</div>
+            </div>
+          </div>
+          <p class="muted small" style="margin-top:8px;">
+            Bu toplamlar sadece hızlı kontrol içindir.
+          </p>
+        </div>
+
+        <div style="margin-top:16px;">
+          <button type="submit">Kaydet</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- SAĞ: BU AYIN GÜNLERİ (YEŞİL = GİRİLMİŞ) -->
+    <div class="zright">
+      <div class="sidecard">
+        <h3 style="margin:0 0 6px 0;">{{ month_label }}</h3>
+        <p class="muted small" style="margin-top:0;">Yeşil: girilmiş günler. Gün seç → tarih otomatik dolsun.</p>
+
+        <div class="calendar-grid" id="calendarGrid">
+          {% for d in calendar_days %}
+            <button type="button"
+                    class="cal-day {% if d.entered %}entered{% endif %}"
+                    data-date="{{ d.date }}"
+                    title="{{ d.date }}">
+              {{ d.date[-2:] }}
+            </button>
+          {% endfor %}
+        </div>
+
+        <div class="muted small" style="margin-top:10px;">
+          İpucu: Aynı gün + aynı kasa yeniden girilirse sistem günceller.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .zwrap{
+    display:grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+    align-items:start;
+  }
+  @media (max-width: 1100px){
+    .zwrap{ grid-template-columns: 1fr; }
+  }
+  .sidecard{
+    border:1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    background:#fff;
+  }
+  .calendar-grid{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap:6px;
+    margin-top: 8px;
+  }
+  .cal-day{
+    padding:10px 0;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .cal-day:hover{ background:#c7d2fe; }
+  .cal-day.entered{
+    background:#16a34a;
+    border-color:#16a34a;
+    color:white;
+  }
+  .small{ font-size:12px; }
+  .sumcard{
+    margin-top:14px;
+    padding:12px;
+    border:1px solid #e5e7eb;
+    border-radius: 14px;
+    background:#f9fafb;
+  }
+</style>
+
+<script>
+  // --- TR sayı parse + toplamlar ---
+  function parseTrNumber(val){
+    if(!val) return 0;
+    val = String(val).trim();
+    if(!val) return 0;
+    // 1.234,56 -> 1234.56
+    val = val.replace(/\./g,'').replace(',', '.');
+    var n = Number(val);
+    return isNaN(n) ? 0 : n;
+  }
+  function fmt(n){
+    return (Math.round(n*100)/100).toFixed(2);
+  }
+  function sumInputs(prefix){
+    var sum = 0;
+    document.querySelectorAll('input[name^="'+prefix+'"]').forEach(function(inp){
+      sum += parseTrNumber(inp.value);
+    });
+    return sum;
+  }
+  function calc(){
+    var kdvSum = sumInputs("kdv_");
+    var posSum = sumInputs("pos_");
+    var fis = parseTrNumber(document.querySelector('input[name="fis_ciro"]').value);
+    var fatura = parseTrNumber(document.querySelector('input[name="fatura_ciro"]').value);
+    var iade = parseTrNumber(document.querySelector('input[name="iade_tutar"]').value);
+    var nihai = fis + fatura - iade;
+
+    document.getElementById("kdvToplam").innerText = fmt(kdvSum);
+    document.getElementById("posToplam").innerText = fmt(posSum);
+    document.getElementById("nihaiToplam").innerText = fmt(nihai);
+  }
+
+  document.addEventListener("input", function(e){
+    if(e.target && e.target.tagName === "INPUT"){
+      calc();
+    }
+  });
+  window.addEventListener("load", calc);
+
+  // --- Takvim günü tıkla → date input set ---
+  document.addEventListener("click", function(e){
+    var btn = e.target.closest(".cal-day");
+    if(!btn) return;
+    var d = btn.getAttribute("data-date");
+    var inp = document.getElementById("tarihInput");
+    if(inp && d){
+      inp.value = d;
+      inp.dispatchEvent(new Event("input", {bubbles:true}));
+      inp.focus();
+    }
+  });
+</script>
+{% endblock %}

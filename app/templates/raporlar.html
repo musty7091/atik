@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Raporlar</h2>
+  <p class="muted">Tarih aralığı ve kasa filtresi ile Z kayıtlarını görüntüle.</p>
+
+  <form method="get" action="{{ url_for('zrapor.raporlar') }}" class="grid3">
+    <div>
+      <label>Başlangıç</label>
+      <input type="date" name="start" value="{{ start_date }}">
+    </div>
+    <div>
+      <label>Bitiş</label>
+      <input type="date" name="end" value="{{ end_date }}">
+    </div>
+    <div>
+      <label>Kasa</label>
+      <select name="kasa_id">
+        <option value="">Tümü</option>
+        {% for k in kasalar %}
+          <option value="{{ k.id }}" {% if kasa_id == k.id %}selected{% endif %}>Kasa {{ k.kasa_no }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="grid-column: 1 / -1;">
+      <button type="submit">Filtrele</button>
+    </div>
+  </form>
+
+  <hr/>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Tarih</th>
+        <th>Kasa</th>
+        <th>Fiş</th>
+        <th>Fatura</th>
+        <th>İade</th>
+        <th>Nihai Ciro</th>
+        <th>POS Brüt</th>
+        <th>Komisyon</th>
+        <th>POS Net</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.tarih }}</td>
+        <td>Kasa {{ r.kasa_no }}</td>
+        <td>{{ "%.2f"|format(r.fis) }}</td>
+        <td>{{ "%.2f"|format(r.fatura) }}</td>
+        <td>{{ "%.2f"|format(r.iade) }}</td>
+        <td><b>{{ "%.2f"|format(r.nihai) }}</b></td>
+        <td>{{ "%.2f"|format(r.pos_brut) }}</td>
+        <td>{{ "%.2f"|format(r.komisyon) }}</td>
+        <td>{{ "%.2f"|format(r.pos_net) }}</td>
+        <td><a href="{{ url_for('zrapor.rapor_detay', z_id=r.id) }}">Detay</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="muted">Seçilen aralıkta kayıt yok.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="2">TOPLAM</th>
+        <th>{{ "%.2f"|format(totals.fis) }}</th>
+        <th>{{ "%.2f"|format(totals.fatura) }}</th>
+        <th>{{ "%.2f"|format(totals.iade) }}</th>
+        <th>{{ "%.2f"|format(totals.nihai) }}</th>
+        <th>{{ "%.2f"|format(totals.pos_brut) }}</th>
+        <th>{{ "%.2f"|format(totals.komisyon) }}</th>
+        <th>{{ "%.2f"|format(totals.pos_net) }}</th>
+        <th></th>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endblock %}

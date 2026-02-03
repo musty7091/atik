@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ app_title if app_title else "Atik Muhasebe | Ertan Market" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="title">Atik Muhasebe ↔ Ertan Market</div>
+      <div class="subtitle">Z Rapor Akışı</div>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('zrapor.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('zrapor.z_giris') }}">Z Giriş</a>
+      <a href="{{ url_for('zrapor.raporlar') }}">Raporlar</a>
+      <a href="{{ url_for('admin.kasa_list') }}">Kasalar</a>
+      <a href="{{ url_for('admin.pos_list') }}">POS</a>
+      <a href="{{ url_for('auth.logout') }}">Çıkış</a>
+      
+
+    </nav>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+<style>
+  :root{
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --line: #e5e7eb;
+    --brand: #2563eb;     /* mavi */
+    --brand2: #7c3aed;    /* mor */
+    --good: #16a34a;      /* yeşil */
+    --warn: #f59e0b;      /* amber */
+    --danger: #dc2626;    /* kırmızı */
+    --shadow: 0 10px 24px rgba(15, 23, 42, .08);
+    --shadow2: 0 6px 16px rgba(15, 23, 42, .10);
+    --r: 16px;
+  }
+
+  body{
+    background: radial-gradient(1200px 500px at 10% 0%, rgba(37,99,235,.10), transparent 55%),
+                radial-gradient(900px 500px at 90% 10%, rgba(124,58,237,.10), transparent 55%),
+                var(--bg);
+    color: var(--text);
+  }
+
+  /* Top bar varsa (senin base.html’de navbar) onu güzelleştirir */
+  .navbar, .topbar, header{
+    background: linear-gradient(90deg, rgba(15,23,42,.96), rgba(30,41,59,.96)) !important;
+    box-shadow: var(--shadow2);
+  }
+  .navbar a, header a{ color: #e2e8f0 !important; }
+  .navbar a:hover, header a:hover{ color: #fff !important; }
+
+  .container, .container-fluid{
+    max-width: 1400px;
+  }
+
+  /* Kartlar */
+  .card{
+    background: var(--card);
+    border: 1px solid rgba(229,231,235,.9);
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    padding: 18px 18px;
+  }
+
+  h2, h3{
+    letter-spacing: -0.02em;
+  }
+
+  .muted{
+    color: var(--muted) !important;
+  }
+
+  hr{
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 14px 0;
+  }
+
+  /* Form elemanları */
+  label{
+    font-size: 13px;
+    color: #334155;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  input, select{
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    outline: none;
+    background: #fff;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+  }
+
+  input:focus, select:focus{
+    border-color: rgba(37,99,235,.55);
+    box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+  }
+
+  /* Butonlar */
+  button, .btn{
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(90deg, var(--brand), var(--brand2));
+    color: white;
+    box-shadow: 0 10px 20px rgba(37,99,235,.18);
+    transition: transform .08s ease, box-shadow .15s ease, filter .15s ease;
+  }
+  button:hover, .btn:hover{
+    filter: brightness(1.03);
+    box-shadow: 0 14px 28px rgba(37,99,235,.22);
+  }
+  button:active, .btn:active{
+    transform: translateY(1px);
+  }
+
+  /* Grid helper’ların varsa (sen kullanıyorsun) */
+  .grid3{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    align-items: end;
+  }
+  @media (max-width: 900px){
+    .grid3{ grid-template-columns: 1fr; }
+  }
+
+  /* Flash mesajlar bootstrap ise daha güzel görünür */
+  .alert{
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(15,23,42,.08);
+  }
+
+  /* -------------------------------------------------------
+     TAKVİM FIX: .cal-day butonları beyaz yazı almasın
+     ------------------------------------------------------- */
+  .calendar-grid .cal-day{
+    background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+    color: #0f172a !important;
+    border: 1px solid rgba(229,231,235,.9) !important;
+    box-shadow: 0 6px 14px rgba(15,23,42,.06) !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
+    padding: 12px 0 !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    filter: none !important;
+  }
+  .calendar-grid .cal-day:hover{
+    color: #0f172a !important;
+  }
+  .calendar-grid .cal-day.entered{
+    background: linear-gradient(180deg, rgba(34,197,94,1), rgba(22,163,74,1)) !important;
+    color: #ffffff !important;
+    border-color: rgba(22,163,74,1) !important;
+    box-shadow: 0 12px 26px rgba(22,163,74,.28) !important;
+  }
+</style>
+
+
+</html>

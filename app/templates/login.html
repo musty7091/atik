@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Giriş | Atik Muhasebe ↔ Ertan Market</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <h1>Atik Muhasebe ↔ Ertan Market</h1>
+    <p class="muted">Günlük Z raporlarını girin, muhasebe her yerden erişsin.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('auth.login_post') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>E-posta</label>
+      <input name="email" type="email" placeholder="admin@atik.local" required>
+
+      <label>Şifre</label>
+      <input name="password" type="password" placeholder="123" required>
+
+      <button type="submit">Giriş Yap</button>
+
+      <div class="hint">
+        Test kullanıcıları: <b>admin@atik.local</b> / 123 — <b>muhasebe@atik.local</b> / 123
+      </div>
+    </form>
+  </div>
+</body>
+</html>

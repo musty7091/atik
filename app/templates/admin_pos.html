@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>POS Cihazları</h2>
+  <p class="muted">POS cihazlarını ve komisyon oranlarını buradan yönetebilirsin.</p>
+
+  <form method="post" action="{{ url_for('admin.pos_add') }}" class="grid3">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div>
+      <label>POS Adı</label>
+      <input name="ad" placeholder="Garanti POS-3" required>
+    </div>
+    <div>
+      <label>Banka (opsiyonel)</label>
+      <input name="banka_adi" placeholder="Garanti">
+    </div>
+    <div>
+      <label>Komisyon Oranı</label>
+      <input name="komisyon_orani" placeholder="2.5 veya 0.025" required>
+    </div>
+    <div style="grid-column: 1 / -1;">
+      <button type="submit">POS Ekle</button>
+    </div>
+  </form>
+
+  <hr/>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>POS</th>
+        <th>Banka</th>
+        <th>Komisyon</th>
+        <th>Durum</th>
+        <th style="width:220px;">İşlem</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in poslar %}
+      <tr>
+        <td>{{ p.ad }}</td>
+        <td>{{ p.banka_adi or "-" }}</td>
+        <td>{{ (p.komisyon_orani * 100) | round(2) }}%</td>
+        <td>{{ "Aktif" if p.aktif else "Pasif" }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.pos_toggle', pos_id=p.id) }}" style="display:inline;">
+            <button type="submit">{{ "Pasifleştir" if p.aktif else "Aktifleştir" }}</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.pos_delete', pos_id=p.id) }}" style="display:inline;">
+            <button type="submit" class="danger">Sil</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">Henüz POS cihazı yok.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

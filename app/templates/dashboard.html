@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card">
+    <h2>{{ app_title }}</h2>
+    <p class="muted">{{ app_subtitle }}</p>
+    <hr/>
+    <p><b>Giriş yapan:</b> {{ user.email }} ({{ user.role }})</p>
+    <p class="muted">
+      Sonraki adım: Kasa yönetimi + POS cihazları + Günlük Z giriş ekranı.
+    </p>
+  </div>
+{% endblock %}

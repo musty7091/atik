@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Z Detay</h2>
+  <p class="muted">{{ z.tarih }} — Kasa {{ z.kasa.kasa_no }}</p>
+
+  <h3>Ciro</h3>
+  <table class="tbl">
+    <tr><td>Fiş</td><td>{{ "%.2f"|format(z.fis_ciro) }}</td></tr>
+    <tr><td>Fatura</td><td>{{ "%.2f"|format(z.fatura_ciro) }}</td></tr>
+    <tr><td>İade</td><td>{{ "%.2f"|format(z.iade_tutar) }}</td></tr>
+    <tr><td><b>Nihai Ciro</b></td><td><b>{{ "%.2f"|format(nihai) }}</b></td></tr>
+  </table>
+
+  <hr/>
+
+  <h3>KKTC KDV (KDV Dahil → İçinden Ayır)</h3>
+  <p class="muted" style="margin-top:-6px;">
+    Bu tabloda senin girdiğin tutar <b>KDV dahil</b> kabul edilir; sistem içinden <b>net</b> ve <b>KDV</b> ayrıştırır.
+  </p>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Oran</th>
+        <th>KDV Dahil (Brüt)</th>
+        <th>KDV Hariç (Net)</th>
+        <th>KDV</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in kdv_rows %}
+      <tr>
+        <td>
+          {% if r.kod == "OZEL" %}
+            Özel Matrah
+          {% else %}
+            %{{ r.oran_yuzde | int }}
+          {% endif %}
+        </td>
+        <td>{{ "%.2f"|format(r.brut) }}</td>
+        <td>
+          {% if r.kod == "OZEL" %}
+            -
+          {% else %}
+            <b>{{ "%.2f"|format(r.net) }}</b>
+          {% endif %}
+        </td>
+        <td>
+          {% if r.kod == "OZEL" %}
+            -
+          {% else %}
+            {{ "%.2f"|format(r.kdv) }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th>TOPLAM</th>
+        <th>{{ "%.2f"|format(kdv_totals.brut) }}</th>
+        <th><b>{{ "%.2f"|format(kdv_totals.net) }}</b></th>
+        <th>{{ "%.2f"|format(kdv_totals.kdv) }}</th>
+      </tr>
+    </tfoot>
+  </table>
+
+  <hr/>
+
+  <h3>POS Dağılımı</h3>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>POS</th>
+        <th>Banka</th>
+        <th>Oran</th>
+        <th>Brüt</th>
+        <th>Komisyon</th>
+        <th>Net</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in pos_detay %}
+      <tr>
+        <td>{{ p.ad }}</td>
+        <td>{{ p.banka or "-" }}</td>
+        <td>{{ (p.oran * 100) | round(2) }}%</td>
+        <td>{{ "%.2f"|format(p.brut) }}</td>
+        <td>{{ "%.2f"|format(p.kom) }}</td>
+        <td><b>{{ "%.2f"|format(p.net) }}</b></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">POS kaydı yok.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="3">TOPLAM</th>
+        <th>{{ "%.2f"|format(pos_brut) }}</th>
+        <th>{{ "%.2f"|format(komisyon) }}</th>
+        <th>{{ "%.2f"|format(pos_net) }}</th>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div style="margin-top:14px;">
+    <a href="{{ url_for('zrapor.raporlar') }}">← Raporlara dön</a>
+  </div>
+</div>
+{% endblock %}

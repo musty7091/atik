@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Kasa Yönetimi</h2>
+  <p class="muted">Ertan Market kasalarını buradan ekleyip yönetebilirsin.</p>
+
+  <form method="post" action="{{ url_for('admin.kasa_add') }}" class="grid2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div>
+      <label>Kasa No</label>
+      <input name="kasa_no" placeholder="1" required>
+    </div>
+    <div>
+      <label>FM No (opsiyonel)</label>
+      <input name="fm_no" placeholder="FM-001">
+    </div>
+    <div style="grid-column: 1 / -1;">
+      <button type="submit">Kasa Ekle</button>
+    </div>
+  </form>
+
+  <hr/>
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Kasa No</th>
+        <th>FM No</th>
+        <th>Durum</th>
+        <th style="width:220px;">İşlem</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for k in kasalar %}
+      <tr>
+        <td>{{ k.kasa_no }}</td>
+        <td>{{ k.fm_no or "-" }}</td>
+        <td>{{ "Aktif" if k.aktif else "Pasif" }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.kasa_toggle', kasa_id=k.id) }}" style="display:inline;">
+            <button type="submit">{{ "Pasifleştir" if k.aktif else "Aktifleştir" }}</button>
+          </form>
+          <form method="post" action="{{ url_for('admin.kasa_delete', kasa_id=k.id) }}" style="display:inline;">
+            <button type="submit" class="danger">Sil</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="muted">Henüz kasa yok.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

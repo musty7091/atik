@@ -15,6 +15,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
+    
     from flask_wtf.csrf import generate_csrf
 
     @app.context_processor

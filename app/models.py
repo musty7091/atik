@@ -64,6 +64,7 @@ class ZRaporu(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     tarih = db.Column(db.Date, nullable=False)
+    vardiya = db.Column(db.Integer, nullable=False, default=1)
 
     kasa_id = db.Column(db.Integer, db.ForeignKey("kasalar.id"), nullable=False)
     kasa = db.relationship("Kasa")
@@ -93,6 +94,9 @@ class ZRaporu(db.Model):
         back_populates="z_raporu",
         cascade="all, delete-orphan",
         lazy="select"
+    )
+    __table_args__ = (
+        UniqueConstraint("tarih", "kasa_id", "vardiya", name="uq_zraporu_tarih_kasa_vardiya"),
     )
 
 

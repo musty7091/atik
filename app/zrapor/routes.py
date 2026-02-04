@@ -111,13 +111,18 @@ def z_giris_post():
     if not kasiyer or not kasiyer.aktif:
         flash("Kasiyer bulunamadı.", "danger")
         return redirect(url_for("zrapor.z_giris"))
+    
+    vardiya_raw = (request.form.get("vardiya") or "1").strip()
+    vardiya = int(vardiya_raw) if vardiya_raw.isdigit() else 1
+    if vardiya not in (1, 2, 3):
+        vardiya = 1
 
     fis = parse_try(request.form.get("fis_ciro"))
     fatura = parse_try(request.form.get("fatura_ciro"))
     iade = parse_try(request.form.get("iade_tutar"))
 
     # Aynı gün + aynı kasa varsa güncelle
-    z = ZRaporu.query.filter_by(tarih=tarih, kasa_id=kasa_id).first()
+    z = ZRaporu.query.filter_by(tarih=tarih, kasa_id=kasa_id, vardiya=vardiya).first()
     if z and z.status == "locked":
         flash("Bu Z raporu kilitli. Düzenlenemez.", "danger")
         return redirect(url_for("zrapor.rapor_detay", z_id=z.id))
@@ -127,7 +132,8 @@ def z_giris_post():
             kasa_id=kasa_id,
             kasiyer_id=kasiyer_id,
             created_by=current_user.email,
-            status="draft"
+            status="draft",
+            vardiya=vardiya
         )
         db.session.add(z)
         db.session.flush()

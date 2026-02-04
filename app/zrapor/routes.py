@@ -202,10 +202,23 @@ def raporlar():
     toplam_pos_brut = Decimal("0.00")
     toplam_komisyon = Decimal("0.00")
     toplam_pos_net = Decimal("0.00")
+    toplam_kdv = Decimal("0.00")
 
     for z in rapor_list:
         pos_brut = Decimal("0.00")
         komisyon = Decimal("0.00")
+        kdv_toplam = Decimal("0.00")
+
+        # KDV satırlarından (KDV DAHİL girilen) tutarı KDV'ye ayırıp topla
+        for ks in z.kdv_satirlari:
+            brut = Decimal(ks.matrah)
+            oran = KDV_ORAN_MAP.get(ks.oran_kodu, None)
+            if oran is None:
+                continue  # OZEL gibi sabit oranı olmayanlar
+            _, kdv = kdv_dahil_ayir(brut, oran)
+            kdv_toplam += kdv
+
+        kdv_toplam = kdv_toplam.quantize(Decimal("0.00"))
 
         for ps in z.pos_satirlari:
             pos_brut += Decimal(ps.brut_tutar)
@@ -224,6 +237,7 @@ def raporlar():
             "fatura": Decimal(z.fatura_ciro),
             "iade": Decimal(z.iade_tutar),
             "nihai": nihai_ciro,
+            "kdv": kdv_toplam,
             "pos_brut": pos_brut,
             "komisyon": komisyon,
             "pos_net": pos_net,
@@ -235,6 +249,7 @@ def raporlar():
         toplam_pos_brut += pos_brut
         toplam_komisyon += komisyon
         toplam_pos_net += pos_net
+        toplam_kdv += kdv_toplam
 
     kasalar = Kasa.query.order_by(Kasa.kasa_no.asc()).all()
 
@@ -253,6 +268,7 @@ def raporlar():
             "pos_brut": toplam_pos_brut,
             "komisyon": toplam_komisyon,
             "pos_net": toplam_pos_net,
+            "kdv": toplam_kdv.quantize(Decimal("0.00")),
             "nihai": (toplam_fis + toplam_fatura - toplam_iade).quantize(Decimal("0.00"))
         }
     )
@@ -312,7 +328,7 @@ def rapor_detay(z_id):
         net = (brut - kom).quantize(Decimal("0.00"))
         pos_detay.append({
             "ad": ps.pos_cihaz.ad,
-            "banka": ps.pos_cihaz.banka_adi,
+            "banka": (ps.pos_cihaz.banka.ad if ps.pos_cihaz and ps.pos_cihaz.banka else "-"),
             "oran": oran,
             "brut": brut,
             "kom": kom,

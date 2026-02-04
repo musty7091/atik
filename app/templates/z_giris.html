@@ -1,231 +1,624 @@
+{# app/templates/z_giris.html #}
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
-  <h2>Günlük Z Girişi</h2>
-  <p class="muted">Fiş/Fatura/İade + KKTC KDV (KDV dahil girilir) + POS dağılımı.</p>
 
-  <div class="zwrap">
-    <!-- SOL: FORM -->
-    <div class="zleft">
-      <form method="post" action="{{ url_for('zrapor.z_giris_post') }}">
+<div class="zpage">
+  <div class="zleft">
+    <div class="card zcard">
+      <div class="zhead">
+        <div>
+          <h2 class="ztitle">Günlük Z Girişi</h2>
+          <div class="zsub muted">Muhasebe fişi düzeninde: üst bilgiler → ciro → KDV → POS satırları.</div>
+        </div>
+      </div>
+
+      <form id="zForm" method="post" action="{{ url_for('zrapor.z_giris_post') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-        <div class="grid3">
-          <div>
-            <label>Tarih</label>
-            <input id="tarihInput" type="date" name="tarih" required value="{{ default_tarih }}">
+        <!-- ÜST SATIR: Tarih | Kasa | Vardiya | Kasiyer -->
+        <div class="fiş">
+          <div class="row4">
+            <div class="f">
+              <label>Tarih</label>
+              <input id="tarih" name="tarih" type="date" value="{{ default_tarih }}" required>
+            </div>
+
+            <div class="f">
+              <label>Kasa</label>
+              <select name="kasa_id" required>
+                <option value="">Seçiniz</option>
+                {% for k in kasalar %}
+                  <option value="{{ k.id }}">Kasa {{ k.kasa_no }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="f">
+              <label>Vardiya</label>
+              <select name="vardiya" required>
+                <option value="">Seçiniz</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </div>
+
+            <div class="f">
+              <label>Kasiyer</label>
+              <select name="kasiyer_id" required>
+                <option value="">Kasiyer seç</option>
+                {% for k in kasiyerler %}
+                  <option value="{{ k.id }}">{{ k.ad }}</option>
+                {% endfor %}
+              </select>
+            </div>
           </div>
-          <div>
-            <label>Kasa</label>
-            <select name="kasa_id" required>
-              <option value="">Seçiniz</option>
-              {% for k in kasalar %}
-                <option value="{{ k.id }}">Kasa {{ k.kasa_no }}{% if k.fm_no %} ({{ k.fm_no }}){% endif %}</option>
+
+          <div class="note muted">
+            İpucu: Aynı <b>tarih + kasa</b> yeniden girilirse sistem günceller.
+          </div>
+        </div>
+
+        <!-- CİRO -->
+        <div class="block">
+          <div class="btitle">Ciro</div>
+          <div class="row3">
+            <div class="f">
+              <label>Fiş (TL)</label>
+              <input class="money" name="fis_ciro" inputmode="decimal" placeholder="0,00">
+            </div>
+            <div class="f">
+              <label>Fatura (TL)</label>
+              <input class="money" name="fatura_ciro" inputmode="decimal" placeholder="0,00">
+            </div>
+            <div class="f">
+              <label>İade (TL)</label>
+              <input class="money" name="iade_tutar" inputmode="decimal" placeholder="0,00">
+            </div>
+          </div>
+        </div>
+
+        <!-- KDV -->
+        <div class="block">
+          <div class="btitle">KKTC KDV (KDV dahil girilir)</div>
+
+          <div class="kdvgrid">
+            {% for kod in kdv_kodlari %}
+              <div class="f">
+                <label>
+                  {% if kod == "KDV0" %}%0
+                  {% elif kod == "KDV5" %}%5
+                  {% elif kod == "KDV10" %}%10
+                  {% elif kod == "KDV16" %}%16
+                  {% elif kod == "KDV20" %}%20
+                  {% elif kod == "OZEL" %}Özel
+                  {% else %}{{ kod }}
+                  {% endif %}
+                </label>
+                <input class="money kdv" name="kdv_{{ kod }}" inputmode="decimal" placeholder="0,00">
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- POS (FİŞ GİBİ SATIRLAR) -->
+        <div class="block">
+          <div class="btitle">POS Satırları</div>
+          <div class="muted" style="margin-bottom:10px;">
+            Akış: <b>Banka seç</b> → o bankanın <b>POS</b> listesinden seç → <b>Tutar</b> gir → <b>+ Satır</b>
+          </div>
+
+          <!-- POS master data (JS için) -->
+          <script>
+            window.__POS_DATA__ = [
+              {% for p in poslar %}
+                {
+                  id: {{ p.id }},
+                  ad: {{ p.ad|tojson }},
+                  pos_no: {{ (p.pos_no or "")|tojson }},
+                  banka_id: {{ (p.banka.id if p.banka else 0) }},
+                  banka_ad: {{ (p.banka.ad if p.banka else "-")|tojson }}
+                }{% if not loop.last %},{% endif %}
               {% endfor %}
-            </select>
-          </div>
-          <div></div>
-        </div>
+            ];
+          </script>
 
-        <hr/>
-
-        <h3>Ciro Bilgileri</h3>
-        <div class="grid3">
-          <div>
-            <label>Fiş Cirosu (TL)</label>
-            <input name="fis_ciro" placeholder="0,00" inputmode="decimal">
-          </div>
-          <div>
-            <label>Fatura Cirosu (TL)</label>
-            <input name="fatura_ciro" placeholder="0,00" inputmode="decimal">
-          </div>
-          <div>
-            <label>İade Tutarı (TL)</label>
-            <input name="iade_tutar" placeholder="0,00" inputmode="decimal">
-          </div>
-        </div>
-
-        <hr/>
-
-        <h3>KKTC KDV (KDV Dahil Tutar Girilir)</h3>
-        <div class="grid3">
-          {% for kod in kdv_kodlari %}
-          <div>
-            <label>
-              {% if kod == "OZEL" %}
-                Özel Matrah (KDV dahil)
-              {% else %}
-                %{{ kod.replace("KDV","") }} KDV Dahil Tutar
-              {% endif %}
-            </label>
-            <input name="kdv_{{ kod }}" placeholder="0,00" inputmode="decimal">
-          </div>
-          {% endfor %}
-        </div>
-
-        <hr/>
-
-        <h3>POS Dağılımı</h3>
-        <div class="grid3">
+          <!-- Banka listesi (POS'lardan türetilir) -->
+          {% set banks = [] %}
           {% for p in poslar %}
-          <div>
-            <label>{{ p.ad }}{% if p.banka_adi %} ({{ p.banka_adi }}){% endif %}</label>
-            <input name="pos_{{ p.id }}" placeholder="0,00" inputmode="decimal">
-            <div class="muted small">Komisyon: {{ (p.komisyon_orani * 100) | round(2) }}%</div>
-          </div>
+            {% if p.banka %}
+              {% set _ = banks.append(p.banka.ad) %}
+            {% endif %}
           {% endfor %}
-        </div>
 
-        <!-- HIZLI KONTROL TOPLAMLARI -->
-        <div class="sumcard">
-          <div class="grid3">
-            <div>
-              <b>KDV Dahil Toplam</b>
-              <div id="kdvToplam">0.00</div>
+          <div class="posAdd">
+            <div class="f">
+              <label>Banka</label>
+              <select id="bankSelect">
+                <option value="">Banka seç</option>
+              </select>
             </div>
-            <div>
-              <b>POS Brüt Toplam</b>
-              <div id="posToplam">0.00</div>
+
+            <div class="f">
+              <label>POS</label>
+              <select id="posSelect" disabled>
+                <option value="">Önce banka seç</option>
+              </select>
             </div>
-            <div>
-              <b>Nihai Ciro (Fiş+Fatura-İade)</b>
-              <div id="nihaiToplam">0.00</div>
+
+            <div class="f">
+              <label>Tutar (TL)</label>
+              <input id="posAmount" class="money" inputmode="decimal" placeholder="0,00">
+            </div>
+
+            <div class="f">
+              <label>&nbsp;</label>
+              <button type="button" id="addPosRow">+ Satır Ekle</button>
             </div>
           </div>
-          <p class="muted small" style="margin-top:8px;">
-            Bu toplamlar sadece hızlı kontrol içindir.
-          </p>
+
+          <div class="posTableWrap">
+            <table class="posTable">
+              <thead>
+                <tr>
+                  <th style="width: 220px;">Banka</th>
+                  <th>POS</th>
+                  <th style="width: 160px;">POS No</th>
+                  <th style="width: 160px; text-align:right;">Tutar</th>
+                  <th style="width: 90px; text-align:center;">İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="posRows">
+                <tr class="emptyRow">
+                  <td colspan="5" class="muted" style="padding:12px;">
+                    Henüz POS satırı yok. Yukarıdan ekleyin.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Backend uyumu için: gizli pos_{id} inputları -->
+          <div style="display:none;">
+            {% for p in poslar %}
+              <input type="hidden" name="pos_{{ p.id }}" id="posHidden_{{ p.id }}" value="0">
+            {% endfor %}
+          </div>
+
+          <div class="totals">
+            <div class="t">
+              <div class="tlabel muted">KDV Dahil Toplam</div>
+              <div class="tvalue" id="tKdv">0,00</div>
+            </div>
+            <div class="t">
+              <div class="tlabel muted">POS Brüt Toplam</div>
+              <div class="tvalue" id="tPos">0,00</div>
+            </div>
+            <div class="t">
+              <div class="tlabel muted">Nihai Ciro</div>
+              <div class="tvalue" id="tNihai">0,00</div>
+              <div class="muted" style="font-size:12px;">Fiş + Fatura − İade</div>
+            </div>
+          </div>
         </div>
 
-        <div style="margin-top:16px;">
-          <button type="submit">Kaydet</button>
+        <div class="foot">
+          <button type="submit" class="btnPrimary">Kaydet</button>
         </div>
       </form>
     </div>
+  </div>
 
-    <!-- SAĞ: BU AYIN GÜNLERİ (YEŞİL = GİRİLMİŞ) -->
-    <div class="zright">
-      <div class="sidecard">
-        <h3 style="margin:0 0 6px 0;">{{ month_label }}</h3>
-        <p class="muted small" style="margin-top:0;">Yeşil: girilmiş günler. Gün seç → tarih otomatik dolsun.</p>
+  <!-- SAĞ: Takvim -->
+  <aside class="zright">
+    <div class="card zcal">
+      <div class="calHead">
+        <div class="calTitle">{{ month_label }}</div>
+        <div class="muted">Gün seç → tarih otomatik dolsun. Yeşil: girilmiş gün.</div>
+      </div>
 
-        <div class="calendar-grid" id="calendarGrid">
-          {% for d in calendar_days %}
-            <button type="button"
-                    class="cal-day {% if d.entered %}entered{% endif %}"
-                    data-date="{{ d.date }}"
-                    title="{{ d.date }}">
-              {{ d.date[-2:] }}
-            </button>
-          {% endfor %}
-        </div>
+      <div class="calendar-grid">
+        {% for day in calendar_days %}
+          <button
+            type="button"
+            class="cal-day {% if day.entered %}entered{% endif %}"
+            data-date="{{ day.date }}"
+            aria-label="{{ day.date }}"
+          >
+            {{ day.date[-2:] }}
+          </button>
+        {% endfor %}
+      </div>
 
-        <div class="muted small" style="margin-top:10px;">
-          İpucu: Aynı gün + aynı kasa yeniden girilirse sistem günceller.
-        </div>
+      <div class="muted" style="margin-top:12px;">
+        İpucu: Aynı gün + aynı kasa yeniden girilirse sistem günceller.
       </div>
     </div>
-  </div>
+  </aside>
 </div>
 
 <style>
-  .zwrap{
+  .zpage{
     display:grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 320px;
     gap: 14px;
     align-items:start;
   }
-  @media (max-width: 1100px){
-    .zwrap{ grid-template-columns: 1fr; }
+  @media (max-width: 1200px){
+    .zpage{ grid-template-columns: 1fr; }
+    .zright{ order: -1; }
   }
-  .sidecard{
-    border:1px solid #e5e7eb;
-    border-radius: 14px;
+
+  .ztitle{ margin: 0; font-weight: 950; letter-spacing: -0.02em; }
+  .zsub{ margin-top: 6px; }
+
+  .fiş{
+    border: 1px solid rgba(229,231,235,.9);
+    border-radius: 16px;
     padding: 14px;
-    background:#fff;
+    background: #ffffff;
+    box-shadow: 0 6px 16px rgba(15,23,42,.05);
   }
+  .note{ margin-top: 10px; font-size: 13px; }
+
+  .block{
+    margin-top: 14px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+  .btitle{
+    font-weight: 950;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .row4{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr .8fr 1.2fr;
+    gap: 12px;
+    align-items:end;
+  }
+  .row3{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    align-items:end;
+  }
+  @media (max-width: 900px){
+    .row4, .row3{ grid-template-columns: 1fr; }
+  }
+
+  .kdvgrid{
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 1100px){
+    .kdvgrid{ grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 700px){
+    .kdvgrid{ grid-template-columns: 1fr; }
+  }
+
+  .posAdd{
+    display:grid;
+    grid-template-columns: 1fr 1.2fr 1fr auto;
+    gap: 10px;
+    align-items:end;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 900px){
+    .posAdd{ grid-template-columns: 1fr; }
+  }
+
+  .posTableWrap{
+    border: 1px solid rgba(229,231,235,.9);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .posTable{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .posTable th, .posTable td{
+    padding: 10px 12px;
+    border-top: 1px solid rgba(229,231,235,.9);
+    vertical-align: middle;
+  }
+  .posTable thead th{
+    border-top: none;
+    background: #f8fafc;
+    font-size: 12px;
+    letter-spacing: .3px;
+    color: #334155;
+    font-weight: 950;
+  }
+
+  .posCellRight{ text-align:right; font-weight: 900; }
+  .posCellCenter{ text-align:center; }
+
+  .tinyBtn{
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 900;
+    cursor:pointer;
+  }
+  .tinyBtn.danger{
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .totals{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+  @media (max-width: 900px){
+    .totals{ grid-template-columns: 1fr; }
+  }
+  .t{
+    border: 1px solid rgba(229,231,235,.9);
+    border-radius: 14px;
+    background: #fff;
+    padding: 12px;
+  }
+  .tvalue{
+    font-size: 22px;
+    font-weight: 950;
+    margin-top: 6px;
+  }
+
+  .foot{
+    display:flex;
+    justify-content:flex-end;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .btnPrimary{
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-weight: 950;
+    min-width: 160px;
+  }
+
+  .zcal{ position: sticky; top: 12px; }
+  @media (max-width: 1200px){ .zcal{ position: static; } }
+  .calTitle{ font-weight: 950; font-size: 18px; margin-bottom: 4px; }
+  .calHead{ margin-bottom: 10px; }
   .calendar-grid{
     display:grid;
     grid-template-columns: repeat(7, 1fr);
-    gap:6px;
-    margin-top: 8px;
-  }
-  .cal-day{
-    padding:10px 0;
-    border-radius:10px;
-    border:1px solid #e5e7eb;
-    background:#f9fafb;
-    cursor:pointer;
-    font-weight:600;
-  }
-  .cal-day:hover{ background:#c7d2fe; }
-  .cal-day.entered{
-    background:#16a34a;
-    border-color:#16a34a;
-    color:white;
-  }
-  .small{ font-size:12px; }
-  .sumcard{
-    margin-top:14px;
-    padding:12px;
-    border:1px solid #e5e7eb;
-    border-radius: 14px;
-    background:#f9fafb;
+    gap: 10px;
+    margin-top: 10px;
   }
 </style>
 
 <script>
-  // --- TR sayı parse + toplamlar ---
-  function parseTrNumber(val){
-    if(!val) return 0;
-    val = String(val).trim();
-    if(!val) return 0;
-    // 1.234,56 -> 1234.56
-    val = val.replace(/\./g,'').replace(',', '.');
-    var n = Number(val);
-    return isNaN(n) ? 0 : n;
+  // --- yardımcı: TR sayı parse/format ---
+  function parseTR(v){
+    if(!v) return 0;
+    let s = String(v).trim();
+    if(!s) return 0;
+    s = s.replace(/\./g,'').replace(',', '.');
+    const n = Number(s);
+    return isFinite(n) ? n : 0;
   }
-  function fmt(n){
-    return (Math.round(n*100)/100).toFixed(2);
+  function fmtTR(n){
+    try{
+      return (n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }catch(e){
+      return (n || 0).toFixed(2);
+    }
   }
-  function sumInputs(prefix){
-    var sum = 0;
-    document.querySelectorAll('input[name^="'+prefix+'"]').forEach(function(inp){
-      sum += parseTrNumber(inp.value);
+
+  // --- Takvim tıklayınca tarih doldur ---
+  (function(){
+    const tarihInput = document.getElementById("tarih");
+    document.querySelectorAll(".cal-day").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const d = btn.getAttribute("data-date");
+        if (tarihInput) tarihInput.value = d;
+      });
     });
-    return sum;
-  }
-  function calc(){
-    var kdvSum = sumInputs("kdv_");
-    var posSum = sumInputs("pos_");
-    var fis = parseTrNumber(document.querySelector('input[name="fis_ciro"]').value);
-    var fatura = parseTrNumber(document.querySelector('input[name="fatura_ciro"]').value);
-    var iade = parseTrNumber(document.querySelector('input[name="iade_tutar"]').value);
-    var nihai = fis + fatura - iade;
+  })();
 
-    document.getElementById("kdvToplam").innerText = fmt(kdvSum);
-    document.getElementById("posToplam").innerText = fmt(posSum);
-    document.getElementById("nihaiToplam").innerText = fmt(nihai);
+  // --- POS satır ekranı (Banka -> POS -> Tutar -> +) ---
+  const POS = (window.__POS_DATA__ || []);
+  const bankSelect = document.getElementById("bankSelect");
+  const posSelect = document.getElementById("posSelect");
+  const posAmount = document.getElementById("posAmount");
+  const posRowsTbody = document.getElementById("posRows");
+
+  // Bankaları POS listesinden çıkar
+  const banksMap = new Map();
+  POS.forEach(p => {
+    const key = String(p.banka_id || 0);
+    if (p.banka_id && !banksMap.has(key)) banksMap.set(key, { id: p.banka_id, ad: p.banka_ad });
+  });
+
+  // bankSelect doldur
+  [...banksMap.values()].sort((a,b)=> (a.ad||"").localeCompare(b.ad||"", 'tr'))
+    .forEach(b => {
+      const opt = document.createElement("option");
+      opt.value = String(b.id);
+      opt.textContent = b.ad;
+      bankSelect.appendChild(opt);
+    });
+
+  function rebuildPosOptions(){
+    const bid = bankSelect.value;
+    posSelect.innerHTML = "";
+    if(!bid){
+      posSelect.disabled = true;
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Önce banka seç";
+      posSelect.appendChild(opt);
+      return;
+    }
+    posSelect.disabled = false;
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "POS seç";
+    posSelect.appendChild(opt0);
+
+    POS.filter(p => String(p.banka_id) === String(bid))
+      .sort((a,b)=> (a.ad||"").localeCompare(b.ad||"", 'tr'))
+      .forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = String(p.id);
+        opt.textContent = p.pos_no ? `${p.ad} (${p.pos_no})` : p.ad;
+        posSelect.appendChild(opt);
+      });
   }
 
-  document.addEventListener("input", function(e){
-    if(e.target && e.target.tagName === "INPUT"){
-      calc();
+  bankSelect.addEventListener("change", rebuildPosOptions);
+  rebuildPosOptions();
+
+  const usedPosIds = []; // tekrar kontrolü için
+  const posLines = [];   // {pos_id, amount}
+
+  function updateHiddenPosInputs(){
+    // her pos_{id} hidden input'unu sıfırla
+    POS.forEach(p => {
+      const el = document.getElementById("posHidden_" + p.id);
+      if (el) el.value = "0";
+    });
+
+    // satırlardaki tutarları pos_id bazında topla
+    const sums = new Map();
+    posLines.forEach(line => {
+      const cur = sums.get(line.pos_id) || 0;
+      sums.set(line.pos_id, cur + (line.amount || 0));
+    });
+
+    sums.forEach((val, posId) => {
+      const el = document.getElementById("posHidden_" + posId);
+      if (el) el.value = fmtTR(val);
+    });
+  }
+
+  function renderPosRows(){
+    posRowsTbody.innerHTML = "";
+
+    if(posLines.length === 0){
+      const tr = document.createElement("tr");
+      tr.className = "emptyRow";
+      tr.innerHTML = `<td colspan="5" class="muted" style="padding:12px;">Henüz POS satırı yok. Yukarıdan ekleyin.</td>`;
+      posRowsTbody.appendChild(tr);
+      recalcTotals();
+      return;
+    }
+
+    posLines.forEach((line, idx) => {
+      const p = POS.find(x => String(x.id) === String(line.pos_id));
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${p ? (p.banka_ad || "-") : "-"}</td>
+        <td><b>${p ? (p.ad || "-") : "-"}</b></td>
+        <td class="muted">${p ? (p.pos_no || "-") : "-"}</td>
+        <td class="posCellRight">${fmtTR(line.amount || 0)}</td>
+        <td class="posCellCenter">
+          <button type="button" class="tinyBtn danger" data-del="${idx}">Sil</button>
+        </td>
+      `;
+      posRowsTbody.appendChild(tr);
+    });
+
+    // sil butonları
+    posRowsTbody.querySelectorAll("button[data-del]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const i = Number(btn.getAttribute("data-del"));
+        if (!Number.isFinite(i)) return;
+        posLines.splice(i, 1);
+        usedPosIds.splice(i, 1);
+        updateHiddenPosInputs();
+        renderPosRows();
+      });
+    });
+
+    recalcTotals();
+  }
+
+  function recalcTotals(){
+    // KDV toplam
+    let kdvTop = 0;
+    document.querySelectorAll('input.kdv').forEach(i => kdvTop += parseTR(i.value));
+
+    // POS toplam (satırlardan)
+    let posTop = 0;
+    posLines.forEach(l => posTop += (l.amount || 0));
+
+    // Nihai
+    const fis = parseTR(document.querySelector('[name="fis_ciro"]')?.value);
+    const fatura = parseTR(document.querySelector('[name="fatura_ciro"]')?.value);
+    const iade = parseTR(document.querySelector('[name="iade_tutar"]')?.value);
+    const nihai = fis + fatura - iade;
+
+    document.getElementById("tKdv").textContent = fmtTR(kdvTop);
+    document.getElementById("tPos").textContent = fmtTR(posTop);
+    document.getElementById("tNihai").textContent = fmtTR(nihai);
+  }
+
+  // POS satır ekleme
+  document.getElementById("addPosRow").addEventListener("click", () => {
+    const bid = bankSelect.value;
+    const pid = posSelect.value;
+    const amt = parseTR(posAmount.value);
+
+    if(!bid){
+      alert("Banka seçmelisin.");
+      return;
+    }
+    if(!pid){
+      alert("POS seçmelisin.");
+      return;
+    }
+    if(!(amt > 0)){
+      alert("Tutar 0'dan büyük olmalı.");
+      return;
+    }
+
+    // tekrar kontrolü: aynı POS daha önce seçilmişse her seferinde sor
+    if (posLines.some(l => String(l.pos_id) === String(pid))){
+      const ok = confirm("Bu POS bu Z’de daha önce kullanılmış. Tekrar kullanmak ister misiniz?");
+      if (!ok) return;
+    }
+
+    posLines.push({ pos_id: Number(pid), amount: amt });
+
+    // input temizle
+    posAmount.value = "";
+    posSelect.value = "";
+
+    updateHiddenPosInputs();
+    renderPosRows();
+  });
+
+  // ciro/kdv değişince totals güncelle
+  document.addEventListener("input", (e) => {
+    if (!e.target) return;
+    if (e.target.classList.contains("money") || e.target.classList.contains("kdv")){
+      recalcTotals();
     }
   });
-  window.addEventListener("load", calc);
 
-  // --- Takvim günü tıkla → date input set ---
-  document.addEventListener("click", function(e){
-    var btn = e.target.closest(".cal-day");
-    if(!btn) return;
-    var d = btn.getAttribute("data-date");
-    var inp = document.getElementById("tarihInput");
-    if(inp && d){
-      inp.value = d;
-      inp.dispatchEvent(new Event("input", {bubbles:true}));
-      inp.focus();
-    }
+  // form submit: hidden inputlar güncel olsun
+  document.getElementById("zForm").addEventListener("submit", () => {
+    updateHiddenPosInputs();
   });
+
+  // ilk çizim
+  renderPosRows();
+  recalcTotals();
 </script>
+
 {% endblock %}

@@ -6,7 +6,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import distinct
 
 from ..extensions import db
-from ..models import Kasa, PosCihazi, ZRaporu, ZKdvSatiri, ZPosSatiri
+from ..models import Kasa, PosCihazi, ZRaporu, ZKdvSatiri, ZPosSatiri, Kasiyer
 from .services import (
     parse_try,
     KDV_KODLARI,
@@ -32,6 +32,7 @@ def dashboard():
 def z_giris():
     kasalar = Kasa.query.filter_by(aktif=True).order_by(Kasa.kasa_no.asc()).all()
     poslar = PosCihazi.query.filter_by(aktif=True).order_by(PosCihazi.ad.asc()).all()
+    kasiyerler = Kasiyer.query.filter_by(aktif=True).all()
 
     today = date.today()
     default_tarih = today.isoformat()
@@ -68,6 +69,7 @@ def z_giris():
         app_title=current_app.config["APP_TITLE"],
         kasalar=kasalar,
         poslar=poslar,
+        kasiyerler=kasiyerler,
         kdv_kodlari=KDV_KODLARI,
         default_tarih=default_tarih,
         calendar_days=calendar_days,
@@ -98,6 +100,17 @@ def z_giris_post():
     if not kasa or not kasa.aktif:
         flash("Kasa bulunamadı.", "danger")
         return redirect(url_for("zrapor.z_giris"))
+    
+    kasiyer_id_raw = (request.form.get("kasiyer_id") or "").strip()
+    if not kasiyer_id_raw or not kasiyer_id_raw.isdigit():
+        flash("Kasiyer seçmelisin.", "danger")
+        return redirect(url_for("zrapor.z_giris"))
+
+    kasiyer_id = int(kasiyer_id_raw)
+    kasiyer = db.session.get(Kasiyer, kasiyer_id)
+    if not kasiyer or not kasiyer.aktif:
+        flash("Kasiyer bulunamadı.", "danger")
+        return redirect(url_for("zrapor.z_giris"))
 
     fis = parse_try(request.form.get("fis_ciro"))
     fatura = parse_try(request.form.get("fatura_ciro"))
@@ -112,11 +125,14 @@ def z_giris_post():
         z = ZRaporu(
             tarih=tarih,
             kasa_id=kasa_id,
+            kasiyer_id=kasiyer_id,
             created_by=current_user.email,
             status="draft"
         )
         db.session.add(z)
         db.session.flush()
+    else:
+        z.kasiyer_id = kasiyer_id
 
 
     z.fis_ciro = fis

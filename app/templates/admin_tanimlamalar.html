@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Tanımlamalar</h2>
+  <p class="muted">Kasa, Banka ve POS tanımlarını tek ekrandan yönet.</p>
+
+  <div class="grid2">
+
+    <!-- KASALAR -->
+    <div class="box">
+      <h3 style="margin-top:0;">Kasalar</h3>
+
+      <form method="post" action="{{ url_for('admin.kasa_add') }}" class="row row-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label>Kasa No</label>
+          <input name="kasa_no" placeholder="1" required>
+        </div>
+        <div>
+          <label>FM No (opsiyonel)</label>
+          <input name="fm_no" placeholder="FM-..." />
+        </div>
+        <div style="display:flex; align-items:end;">
+          <button type="submit">Kasa Ekle</button>
+        </div>
+      </form>
+
+      <hr/>
+
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Kasa</th>
+            <th>FM No</th>
+            <th>Durum</th>
+            <th style="width:220px;">İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in kasalar %}
+          <tr>
+            <td><b>Kasa {{ k.kasa_no }}</b></td>
+            <td>{{ k.fm_no or "-" }}</td>
+            <td>
+              {% if k.aktif %}
+                <span class="pill ok">Aktif</span>
+              {% else %}
+                <span class="pill off">Pasif</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <form method="post" action="{{ url_for('admin.kasa_toggle', kasa_id=k.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2">Aktif/Pasif</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.kasa_delete', kasa_id=k.id) }}"
+                    onsubmit="return confirm('Kasa silinsin mi?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2 danger">Sil</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- KASİYERLER -->
+    <div class="box">
+      <h3 style="margin-top:0;">Kasiyerler</h3>
+
+      <form method="post" action="{{ url_for('admin.kasiyer_add') }}" class="row row-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label>Kasiyer Adı</label>
+          <input name="kasiyer_ad" placeholder="Ayşe Yılmaz" required>
+        </div>
+        <div style="display:flex; align-items:end;">
+          <button type="submit">Kasiyer Ekle</button>
+        </div>
+      </form>
+
+      <hr/>
+
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Kasiyer</th>
+            <th>Durum</th>
+            <th style="width:220px;">İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for k in kasiyerler %}
+          <tr>
+            <td><b>{{ k.ad }}</b></td>
+            <td>
+              {% if k.aktif %}
+                <span class="pill ok">Aktif</span>
+              {% else %}
+                <span class="pill off">Pasif</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <form method="post" action="{{ url_for('admin.kasiyer_toggle', kasiyer_id=k.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2">Aktif/Pasif</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.kasiyer_delete', kasiyer_id=k.id) }}"
+                    onsubmit="return confirm('Kasiyer silinsin mi?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2 danger">Sil</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BANKALAR + POS -->
+    <div class="box">
+      <h3 style="margin-top:0;">Bankalar</h3>
+
+      <form method="post" action="{{ url_for('admin.banka_add') }}" class="row row-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+          <label>Banka Adı</label>
+          <input name="banka_ad" placeholder="Garanti" required>
+        </div>
+        <div style="display:flex; align-items:end;">
+          <button type="submit">Banka Ekle</button>
+        </div>
+      </form>
+
+      <table class="tbl" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Banka</th>
+            <th>Durum</th>
+            <th style="width:220px;">İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bankalar %}
+          <tr>
+            <td><b>{{ b.ad }}</b></td>
+            <td>
+              {% if b.aktif %}
+                <span class="pill ok">Aktif</span>
+              {% else %}
+                <span class="pill off">Pasif</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <form method="post" action="{{ url_for('admin.banka_toggle', banka_id=b.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2">Aktif/Pasif</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.banka_delete', banka_id=b.id) }}"
+                    onsubmit="return confirm('Banka silinsin mi?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2 danger">Sil</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <hr style="margin:14px 0;"/>
+
+      <h3 style="margin-top:0;">POS Cihazları</h3>
+
+      <form method="post" action="{{ url_for('admin.pos_add') }}" class="row row-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div>
+          <label>POS No (slipte yazan)</label>
+          <input name="pos_no" placeholder="123456" required>
+        </div>
+
+        <div>
+          <label>POS Adı</label>
+          <input name="ad" placeholder="Kasa2 POS" required>
+        </div>
+
+        <div>
+          <label>Banka</label>
+          <select name="banka_id" required>
+            <option value="">Banka seç</option>
+            {% for b in bankalar %}
+              {% if b.aktif %}
+                <option value="{{ b.id }}">{{ b.ad }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label>Komisyon Oranı</label>
+          <input name="komisyon_orani" placeholder="2.5 (veya 0.025)" />
+        </div>
+
+        <div style="display:flex; align-items:end;">
+          <button type="submit">POS Ekle</button>
+        </div>
+      </form>
+
+      <table class="tbl" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>POS No</th>
+            <th>POS</th>
+            <th>Banka</th>
+            <th>Komisyon</th>
+            <th>Durum</th>
+            <th style="width:220px;">İşlem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in poslar %}
+          <tr>
+            <td><b>{{ p.pos_no or "-" }}</b></td>
+            <td>{{ p.ad }}</td>
+            <td>{{ p.banka.ad if p.banka else "-" }}</td>
+            <td>{{ (p.komisyon_orani * 100) | round(2) }}%</td>
+            <td>
+              {% if p.aktif %}
+                <span class="pill ok">Aktif</span>
+              {% else %}
+                <span class="pill off">Pasif</span>
+              {% endif %}
+            </td>
+            <td class="actions">
+              <form method="post" action="{{ url_for('admin.pos_toggle', pos_id=p.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2">Aktif/Pasif</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.pos_delete', pos_id=p.id) }}"
+                    onsubmit="return confirm('POS silinsin mi?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn2 danger">Sil</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  @media (max-width: 1100px){ .grid2{ grid-template-columns: 1fr; } }
+
+  .box{
+    border:1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    background:#fff;
+  }
+
+  .row{ display:grid; gap:10px; align-items:end; }
+  .row-2{ grid-template-columns: 1fr auto; }
+  .row-3{ grid-template-columns: 1fr 1fr auto; }
+  .row-4{ grid-template-columns: 1fr 1fr 1fr 1fr auto; }
+
+  @media (max-width: 900px){
+    .row-2,.row-3,.row-4{ grid-template-columns: 1fr; }
+  }
+
+  .tbl{ width:100%; border-collapse: collapse; font-size:14px; }
+  .tbl th, .tbl td{ padding:10px; border-top:1px solid #e5e7eb; vertical-align: middle; }
+  .tbl th{ text-align:left; color:#334155; font-size:12px; letter-spacing:.3px; }
+
+  .actions{ display:flex; gap:8px; }
+  .btn2{
+    padding:8px 10px;
+    border-radius: 12px;
+    border:1px solid #e5e7eb;
+    background:#fff;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .btn2:hover{ background:#f8fafc; }
+  .btn2.danger{ border-color:#fecaca; color:#b91c1c; }
+  .pill{ padding:4px 10px; border-radius:999px; font-weight:800; font-size:12px; display:inline-block; }
+  .pill.ok{ background:#dcfce7; color:#166534; }
+  .pill.off{ background:#fee2e2; color:#991b1b; }
+</style>
+{% endblock %}
